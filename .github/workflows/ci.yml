@@ -3,18 +3,52 @@ on:
   push:
     branches: [ main ]
   pull_request:
+
 jobs:
   dbt:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: .
+    env:
+      # dbt will read profiles here
+      DBT_PROFILES_DIR: ${{ github.workspace }}/.dbt
+      # point models to tiny test parquet files you commit to the repo
+      DATA_ROOT: ${{ github.workspace }}/tests/fixtures/silver
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install "dbt-core==1.10.13" "dbt-duckdb==1.10.0"
-      - run: dbt deps
-      - run: dbt run
-      - run: dbt test
+
+      - name: Install dbt (duckdb)
+        run: pip install "dbt-core==1.10.13" "dbt-duckdb==1.10.0"
+
+      - name: Create profiles.yml
+        run: |
+          mkdir -p "$DBT_PROFILES_DIR"
+          cat > "$DBT_PROFILES_DIR/profiles.yml" << 'YAML'
+          steam_dataset_2025:
+            target: ci
+            outputs:
+              ci:
+                type: duckdb
+                path: ${{ github.workspace }}/target/ci.duckdb
+                threads: 1
+                extensions: [parquet]
+                settings:
+                  memory_limit: "2GB"
+          YAML
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt compile
+        run: dbt compile --no-partial-parse
+
+      - name: dbt run
+        run: dbt run --no-partial-parse
+
+      - name: dbt test
+        run: dbt test --no-partial-parse
