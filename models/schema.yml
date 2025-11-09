@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_applications
+    description: "Raw Steam application data including app metadata and pricing fields."
+    columns:
+      - name: appid
+        description: "Unique Steam application ID (primary key)."
+        tests: [unique, not_null]
+
+  - name: stg_genres
+    description: "Lookup table containing Steam game genres."
+    columns:
+      - name: genre_id
+        description: "Unique genre identifier (primary key)."
+        tests: [unique, not_null]
+      - name: genre_name
+        description: "Name of the genre, e.g., Action, RPG, Simulation."
+        tests: [not_null]
+
+  - name: stg_reviews
+    description: "Steam user reviews including playtime, rating, and timestamps."
+    columns:
+      - name: recommendationid
+        description: "Unique review identifier (primary key)."
+        tests: [unique, not_null]
+      - name: appid
+        description: "Foreign key referencing stg_applications.appid."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_applications')
+                field: appid
