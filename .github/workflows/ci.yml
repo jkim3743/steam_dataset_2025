@@ -1,0 +1,20 @@
+name: CI (dbt + DuckDB)
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: steam_dataset_2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install "dbt-core==1.10.13" "dbt-duckdb==1.10.0"
+      - run: dbt deps
+      - run: dbt run
+      - run: dbt test
