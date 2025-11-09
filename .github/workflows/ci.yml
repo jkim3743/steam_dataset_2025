@@ -11,9 +11,7 @@ jobs:
       run:
         working-directory: .
     env:
-      # dbt will read profiles here
       DBT_PROFILES_DIR: ${{ github.workspace }}/.dbt
-      # point models to tiny test parquet files you commit to the repo
       DATA_ROOT: ${{ github.workspace }}/tests/fixtures/silver
     steps:
       - uses: actions/checkout@v4
@@ -22,10 +20,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dbt (duckdb)
-        run: pip install "dbt-core==1.10.13" "dbt-duckdb==1.10.0"
+      - name: Install Python deps (dbt + parquet libs)
+        run: |
+          pip install "dbt-core==1.10.13" "dbt-duckdb==1.10.0" pandas pyarrow
 
-      - name: Create profiles.yml
+      - name: Create profiles.yml for DuckDB
         run: |
           mkdir -p "$DBT_PROFILES_DIR"
           cat > "$DBT_PROFILES_DIR/profiles.yml" << 'YAML'
@@ -41,6 +40,36 @@ jobs:
                   memory_limit: "2GB"
           YAML
 
+      # 🔹 Generate tiny parquet fixtures that match your staging models
+      - name: Generate fixture parquet files
+        run: |
+          python - << 'PY'
+          import os, pandas as pd
+          root = os.environ["DATA_ROOT"]
+          os.makedirs(root, exist_ok=True)
+
+          pd.DataFrame([
+            {"appid": 10, "name": "Test Game", "release_date": "2024-01-01", "price": 19.99, "platform_windows": True, "platform_mac": False, "platform_linux": False}
+          ]).to_parquet(os.path.join(root, "dim_applications.parquet"))
+
+          pd.DataFrame([
+            {"genre_id": 1, "genre_name": "Action"}
+          ]).to_parquet(os.path.join(root, "dim_genre.parquet"))
+
+          pd.DataFrame([
+            {"appid": 10, "genre_id": 1}
+          ]).to_parquet(os.path.join(root, "bridge_app_genre.parquet"))
+
+          pd.DataFrame([
+            {"recommendationid": 1001, "appid": 10, "voted_up": 1, "playtime_at_review": 120, "timestamp_created": "2024-02-01T00:00:00Z"}
+          ]).to_parquet(os.path.join(root, "fact_reviews.parquet"))
+
+          pd.DataFrame([{"category_id": 1, "category_name": "Single-player"}]).to_parquet(os.path.join(root, "dim_category.parquet"))
+          pd.DataFrame([{"publisher_id": 1, "publisher_name": "TestPub"}]).to_parquet(os.path.join(root, "dim_publisher.parquet"))
+          pd.DataFrame([{"developer_id": 1, "developer_name": "TestDev"}]).to_parquet(os.path.join(root, "dim_developer.parquet"))
+          pd.DataFrame([{"platform_id": 1, "platform_name": "Windows"}]).to_parquet(os.path.join(root, "dim_platform.parquet"))
+          PY
+
       - name: dbt deps
         run: dbt deps
 
@@ -52,3 +81,9 @@ jobs:
 
       - name: dbt test
         run: dbt test --no-partial-parse
+
+      - name: Upload dbt target as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbt-target
+          path: target
