@@ -1,15 +1,18 @@
-Welcome to your new dbt project!
+# Steam Dataset 2025 – Multi-Modal Gaming Analytics
 
-### Using the starter project
+**Goal:** Clean, model, test, and publish analytics-ready tables from the Steam 2025 dataset.
 
-Try running the following commands:
-- dbt run
-- dbt test
+**Architecture:** Raw CSV → Bronze (Parquet) → Silver (dims/bridges/facts) → Gold (KPIs via dbt)
 
+**Reproduce**
+1. `python scripts/to_bronze.py`
+2. `python scripts/to_silver.py`
+3. `cd steam_dataset_2025 && dbt run && dbt test`
+4. `dbt docs generate && dbt docs serve` (or visit GitHub Pages link)
 
-### Resources:
-- Learn more about dbt [in the docs](https://docs.getdbt.com/docs/introduction)
-- Check out [Discourse](https://discourse.getdbt.com/) for commonly asked questions and answers
-- Join the [chat](https://community.getdbt.com/) on Slack for live discussions and support
-- Find [dbt events](https://events.getdbt.com) near you
-- Check out [the blog](https://blog.getdbt.com/) for the latest news on dbt's development and best practices
+**Outputs**
+- Silver: `dim_applications`, `dim_genres`, `fact_reviews`, `bridge_app_genre`, …
+- Gold: `genre_review_kpis` (+ more)
+
+**Quality**
+- dbt tests: `unique`, `not_null`, `relationships` 
