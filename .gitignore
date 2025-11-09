@@ -1,4 +1,19 @@
-
+# dbt
 target/
 dbt_packages/
 logs/
+# Python
+__pycache__/
+*.pyc
+.venv/
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
+# Data (keep code-only repo)
+staging/bronze/
+staging/silver/
+exports/
+*.parquet
+*.csv
+*.duckdb
