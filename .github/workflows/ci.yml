@@ -53,8 +53,9 @@ jobs:
           ]).to_parquet(os.path.join(root, "dim_applications.parquet"))
 
           pd.DataFrame([
-            {"genre_id": 1, "genre_name": "Action"}
+            {"genre_id": 1, "name": "Action", "genre_name": "Action"}
           ]).to_parquet(os.path.join(root, "dim_genre.parquet"))
+
 
           pd.DataFrame([
             {"appid": 10, "genre_id": 1}
