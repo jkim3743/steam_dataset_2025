@@ -30,5 +30,5 @@ select
   platform_windows,
   platform_mac,
   platform_linux
-from src;
+from src
 
